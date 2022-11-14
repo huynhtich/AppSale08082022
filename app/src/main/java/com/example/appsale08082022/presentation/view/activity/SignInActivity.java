@@ -1,10 +1,5 @@
 package com.example.appsale08082022.presentation.view.activity;
 
-import androidx.appcompat.app.AppCompatActivity;
-
-import android.os.Bundle;
-
-import com.example.appsale08082022.R;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -12,18 +7,34 @@ import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModel;
 import androidx.lifecycle.ViewModelProvider;
 
+import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
+import android.text.Spannable;
+import android.text.SpannableString;
+import android.text.SpannableStringBuilder;
+import android.text.SpannedString;
+import android.text.method.LinkMovementMethod;
 import android.util.Log;
+import android.view.View;
+import android.widget.EditText;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.appsale08082022.R;
 import com.example.appsale08082022.data.model.AppResource;
 import com.example.appsale08082022.data.model.User;
+import com.example.appsale08082022.databinding.ActivitySignInBinding;
 import com.example.appsale08082022.presentation.viewmodel.SignInViewModel;
+import com.example.appsale08082022.utils.SpannedUtil;
 
 public class SignInActivity extends AppCompatActivity {
 
     SignInViewModel signInViewModel;
+    EditText edtEmail, edtPassword;
+    LinearLayout linearSignIn, loadingView;
+    TextView tvRegister;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -37,8 +48,17 @@ public class SignInActivity extends AppCompatActivity {
             }
         }).get(SignInViewModel.class);
 
+        initData();
         observer();
         event();
+    }
+
+    private void initData() {
+        loadingView = findViewById(R.id.layout_loading);
+        linearSignIn = findViewById(R.id.sign_in);
+        edtEmail = findViewById(R.id.textEditEmail);
+        edtPassword = findViewById(R.id.textEditPassword);
+        tvRegister = findViewById(R.id.text_view_register);
     }
 
     private void observer() {
@@ -47,12 +67,15 @@ public class SignInActivity extends AppCompatActivity {
             public void onChanged(AppResource<User> userAppResource) {
                 switch (userAppResource.status) {
                     case ERROR:
-                        Log.d("BBB",  userAppResource.message);
+                        loadingView.setVisibility(View.GONE);
+                        Toast.makeText(SignInActivity.this, userAppResource.message, Toast.LENGTH_SHORT).show();
                         break;
                     case LOADING:
+                        loadingView.setVisibility(View.VISIBLE);
                         break;
                     case SUCCESS:
-                        Log.d("BBB", userAppResource.data.toString());
+                        loadingView.setVisibility(View.GONE);
+                        Toast.makeText(SignInActivity.this, "Đăng nhập thành công", Toast.LENGTH_SHORT).show();
                         break;
                 }
             }
@@ -60,6 +83,30 @@ public class SignInActivity extends AppCompatActivity {
     }
 
     private void event() {
-        signInViewModel.signIn("demo1@gmail.com", "12345678");
+        linearSignIn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                String email = edtEmail.getText().toString();
+                String password = edtPassword.getText().toString();
+
+                if (email.isEmpty() || password.isEmpty()) {
+                    Toast.makeText(SignInActivity.this, "Bạn chưa nhập đủ thông tin!!!", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                signInViewModel.signIn(email, password);
+            }
+        });
+
+        SpannableStringBuilder spannableStringBuilder = new SpannableStringBuilder();
+        spannableStringBuilder.append("Don't have an account?");
+        spannableStringBuilder.append(SpannedUtil.setClickColorLink("Register", this, new SpannedUtil.OnListenClick() {
+            @Override
+            public void onClick() {
+                startActivity(new Intent(SignInActivity.this, RegisterActivity.class));
+            }
+        }));
+        tvRegister.setText(spannableStringBuilder);
+        tvRegister.setHighlightColor(Color.TRANSPARENT);
+        tvRegister.setMovementMethod(LinkMovementMethod.getInstance());
     }
 }
